@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+*.so
+.Python
+env/
+venv/
+.venv/
+pip-wheel-metadata/
+*.sqlite
+*.db
+.pytest_cache/
+.mypy_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Node / React
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dist/
+.cache/
+.parcel-cache/
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
+
+# OS
+desktop.ini
