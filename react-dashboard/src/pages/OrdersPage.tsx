@@ -4,20 +4,41 @@ import React, { useState, useCallback } from "react";
 import { useOrders } from "../hooks/useOrders";
 import { SearchFilterBar } from "../components/SearchFilterBar";
 import { OrdersTable } from "../components/OrdersTable";
+import { ErrorState } from "../components/ErrorState";
 import type { Order } from "../services/api";
 
 type StatusFilter = Order["status"] | "all";
 
+const RefreshIcon = () => (
+  <svg
+    width="14"
+    height="14"
+    viewBox="0 0 20 20"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+  </svg>
+);
+
+function formatLastUpdated(date: Date): string {
+  return date.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+}
+
 export const OrdersPage: React.FC = () => {
-  const { orders, loading, error, refetch } = useOrders();
+  const { orders, loading, error, lastUpdated, refetch } = useOrders();
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
-  // When a retry succeeds, update the matching order in local state immediately
-  // so the user sees the change without waiting for the next auto-refresh.
-  const handleRetrySuccess = useCallback((_updated: Order) => {
-    refetch();
-  }, [refetch]);
+  // On retry success, refetch so the updated order status reflects immediately
+  const handleRetrySuccess = useCallback(
+    (_updated: Order) => { refetch(); },
+    [refetch]
+  );
 
   const filtered = orders.filter((o) => {
     const matchesSearch = o.order_id
@@ -27,94 +48,72 @@ export const OrdersPage: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const hasFilters = searchText.trim() !== "" || statusFilter !== "all";
+
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "24px 16px" }}>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "24px",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
-        <div>
-          <h1 style={{ margin: 0, fontSize: "1.5rem", color: "#111827" }}>
-            Order Sync Dashboard
-          </h1>
-          <p style={{ margin: "4px 0 0", color: "#6b7280", fontSize: "0.9rem" }}>
-            Auto-refreshes every 30 seconds
-          </p>
+    <div className="page-container">
+      {/* Page header */}
+      <div className="page-header">
+        <div className="page-header-row">
+          <div>
+            <h1 className="page-title">Order Sync Dashboard</h1>
+            <p className="page-subtitle">
+              Monitor incoming orders and retry failed ERP syncs.
+            </p>
+          </div>
+          <button
+            className="btn btn-primary"
+            onClick={refetch}
+            disabled={loading}
+            aria-label="Refresh orders now"
+          >
+            <RefreshIcon />
+            Refresh
+          </button>
         </div>
-        <button
-          onClick={refetch}
-          style={{
-            padding: "8px 16px",
-            borderRadius: "6px",
-            border: "1px solid #3b82f6",
-            backgroundColor: "#3b82f6",
-            color: "#fff",
-            cursor: "pointer",
-            fontWeight: 600,
-            fontSize: "0.9rem",
-          }}
-        >
-          Refresh Now
-        </button>
       </div>
 
-      {/* Filters */}
-      <SearchFilterBar
-        searchText={searchText}
-        onSearchChange={setSearchText}
-        statusFilter={statusFilter}
-        onStatusFilterChange={setStatusFilter}
-      />
-
-      {/* Content states */}
-      {loading && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "48px",
-            color: "#6b7280",
-            fontSize: "1rem",
-          }}
-        >
-          Loading orders…
-        </div>
-      )}
-
+      {/* Error banner — shown above the card so data context is still visible */}
       {!loading && error && (
-        <div
-          style={{
-            padding: "16px",
-            backgroundColor: "#fee2e2",
-            border: "1px solid #fca5a5",
-            borderRadius: "8px",
-            color: "#991b1b",
-            marginBottom: "16px",
-          }}
-        >
-          {error}
-        </div>
+        <ErrorState message={error} onRetry={refetch} />
       )}
 
-      {!loading && !error && (
-        <>
-          <div
-            style={{
-              marginBottom: "12px",
-              fontSize: "0.85rem",
-              color: "#6b7280",
-            }}
-          >
-            Showing {filtered.length} of {orders.length} orders
-          </div>
-          <OrdersTable orders={filtered} onRetrySuccess={handleRetrySuccess} />
-        </>
+      {/* Main content card */}
+      {!error && (
+        <div className="card">
+          {/* Toolbar: search + filter, always visible even during load */}
+          <SearchFilterBar
+            searchText={searchText}
+            onSearchChange={setSearchText}
+            statusFilter={statusFilter}
+            onStatusFilterChange={setStatusFilter}
+          />
+
+          {/* Results count + last-updated indicator */}
+          {!loading && (
+            <div className="results-bar">
+              <span className="results-count">
+                {filtered.length === orders.length
+                  ? `${orders.length} order${orders.length !== 1 ? "s" : ""}`
+                  : `${filtered.length} of ${orders.length} orders`}
+              </span>
+              {lastUpdated && (
+                <span className="last-updated">
+                  <span className="live-dot" aria-hidden="true" />
+                  Updated {formatLastUpdated(lastUpdated)}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Table — shows skeleton while loading, data or empty state otherwise */}
+          <OrdersTable
+            orders={filtered}
+            loading={loading}
+            onRetrySuccess={handleRetrySuccess}
+            hasFilters={hasFilters}
+          />
+        </div>
       )}
     </div>
   );

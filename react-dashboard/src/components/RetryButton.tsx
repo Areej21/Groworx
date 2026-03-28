@@ -1,6 +1,6 @@
 // RetryButton calls POST /orders/{id}/retry.
 // Disabled while the request is in-flight to prevent double-submits.
-// Only rendered for failed orders (parent is responsible for that check).
+// Shows an inline spinner while busy and success/error feedback after.
 import React, { useState } from "react";
 import { retryOrder } from "../services/api";
 import type { Order } from "../services/api";
@@ -10,51 +10,44 @@ interface Props {
   onRetrySuccess: (updated: Order) => void;
 }
 
+const Spinner = () => <span className="spinner" aria-hidden="true" />;
+
 export const RetryButton: React.FC<Props> = ({ order, onRetrySuccess }) => {
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ text: string; ok: boolean } | null>(null);
 
   const handleRetry = async () => {
     setBusy(true);
-    setMessage(null);
+    setFeedback(null);
     try {
       const updated = await retryOrder(order.id);
-      setMessage("Retry successful — order synced.");
+      setFeedback({ text: "Synced ✔", ok: true });
       onRetrySuccess(updated);
     } catch {
-      setMessage("Retry failed. Please try again.");
+      setFeedback({ text: "Retry failed", ok: false });
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "4px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "flex-start" }}>
       <button
+        className="btn btn-retry btn-sm"
         onClick={handleRetry}
         disabled={busy}
-        style={{
-          padding: "4px 12px",
-          borderRadius: "6px",
-          border: "1px solid #dc2626",
-          backgroundColor: busy ? "#fee2e2" : "#dc2626",
-          color: busy ? "#dc2626" : "#fff",
-          cursor: busy ? "not-allowed" : "pointer",
-          fontWeight: 600,
-          fontSize: "0.8rem",
-          transition: "background-color 0.2s",
-        }}
+        aria-label={busy ? "Retrying order sync…" : "Retry failed order sync"}
+        aria-busy={busy}
       >
+        {busy && <Spinner />}
         {busy ? "Retrying…" : "Retry"}
       </button>
-      {message && (
+      {feedback && (
         <span
-          style={{
-            fontSize: "0.75rem",
-            color: message.includes("successful") ? "#065f46" : "#991b1b",
-          }}
+          className={`retry-feedback ${feedback.ok ? "retry-feedback-ok" : "retry-feedback-err"}`}
+          role="status"
         >
-          {message}
+          {feedback.text}
         </span>
       )}
     </div>

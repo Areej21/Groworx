@@ -2,22 +2,16 @@ import { OrdersPage } from "./pages/OrdersPage";
 
 function App() {
   return (
-    <div style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", backgroundColor: "#f9fafb", minHeight: "100vh" }}>
-      <header
-        style={{
-          backgroundColor: "#1d4ed8",
-          color: "#fff",
-          padding: "12px 24px",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-        }}
-      >
-        <span style={{ fontWeight: 700, fontSize: "1.1rem" }}>Groworx</span>
-        <span style={{ opacity: 0.7 }}>|</span>
-        <span style={{ opacity: 0.9, fontSize: "0.95rem" }}>ERP Integration Dashboard</span>
-      </header>
-      <main>
+    <div className="page-wrapper">
+      <nav className="navbar" role="navigation" aria-label="Main navigation">
+        <div className="navbar-inner">
+          <div className="navbar-logo-mark" aria-hidden="true">Gx</div>
+          <span className="navbar-brand">Groworx</span>
+          <span className="navbar-divider" aria-hidden="true">|</span>
+          <span className="navbar-subtitle">ERP Integration Dashboard</span>
+        </div>
+      </nav>
+      <main style={{ flex: 1 }}>
         <OrdersPage />
       </main>
     </div>

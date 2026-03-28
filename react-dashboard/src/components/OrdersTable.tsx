@@ -1,107 +1,82 @@
-// OrdersTable renders the full list of orders as a responsive table.
-// Retry button is shown only for failed orders.
+// OrdersTable renders the full list of orders in a clean, responsive table.
+// Delegates skeleton loading, empty state, and retry action to dedicated components.
 import React from "react";
 import type { Order } from "../services/api";
 import { StatusBadge } from "./StatusBadge";
 import { RetryButton } from "./RetryButton";
+import { LoadingState } from "./LoadingState";
+import { EmptyState } from "./EmptyState";
 
 interface Props {
   orders: Order[];
+  loading: boolean;
   onRetrySuccess: (updated: Order) => void;
+  hasFilters: boolean;
 }
+
+const COLUMNS = ["Order ID", "Customer", "Total", "Status", "Received", "Action"];
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleString();
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
-export const OrdersTable: React.FC<Props> = ({ orders, onRetrySuccess }) => {
-  if (orders.length === 0) {
-    return (
-      <div
-        style={{
-          textAlign: "center",
-          padding: "48px 16px",
-          color: "#6b7280",
-          fontSize: "1rem",
-        }}
-      >
-        No orders match your search. Try changing the filters.
-      </div>
-    );
-  }
+export const OrdersTable: React.FC<Props> = ({
+  orders,
+  loading,
+  onRetrySuccess,
+  hasFilters,
+}) => (
+  <div className="table-wrap animate-in">
+    <table className="orders-table" aria-label="Orders list">
+      <thead>
+        <tr>
+          {COLUMNS.map((col) => (
+            <th key={col} scope="col">{col}</th>
+          ))}
+        </tr>
+      </thead>
 
-  return (
-    <div style={{ overflowX: "auto" }}>
-      <table
-        style={{
-          width: "100%",
-          borderCollapse: "collapse",
-          fontSize: "0.9rem",
-        }}
-      >
-        <thead>
-          <tr
-            style={{
-              backgroundColor: "#f3f4f6",
-              textAlign: "left",
-            }}
-          >
-            {["Order ID", "Customer", "Total", "Status", "Received", "Action"].map(
-              (heading) => (
-                <th
-                  key={heading}
-                  style={{
-                    padding: "12px 16px",
-                    borderBottom: "2px solid #d1d5db",
-                    fontWeight: 600,
-                    color: "#374151",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {heading}
-                </th>
-              )
-            )}
-          </tr>
-        </thead>
+      {loading ? (
+        <LoadingState />
+      ) : orders.length === 0 ? (
         <tbody>
-          {orders.map((order, idx) => (
-            <tr
-              key={order.id}
-              style={{
-                backgroundColor: idx % 2 === 0 ? "#fff" : "#f9fafb",
-                borderBottom: "1px solid #e5e7eb",
-              }}
-            >
-              <td style={{ padding: "12px 16px", fontFamily: "monospace", fontWeight: 600 }}>
-                {order.order_id}
+          <tr>
+            <td colSpan={COLUMNS.length} style={{ padding: 0, border: "none" }}>
+              <EmptyState hasFilters={hasFilters} />
+            </td>
+          </tr>
+        </tbody>
+      ) : (
+        <tbody>
+          {orders.map((order) => (
+            <tr key={order.id}>
+              <td className="cell-order-id">{order.order_id}</td>
+              <td>
+                <div className="cell-customer-name">{order.customer_name ?? "—"}</div>
+                <div className="cell-customer-email">{order.customer_email}</div>
               </td>
-              <td style={{ padding: "12px 16px" }}>
-                <div style={{ fontWeight: 500 }}>{order.customer_name ?? "—"}</div>
-                <div style={{ fontSize: "0.8rem", color: "#6b7280" }}>
-                  {order.customer_email}
-                </div>
+              <td className="cell-total">
+                <span className="cell-currency">{order.currency}</span>
+                {parseFloat(order.total).toFixed(2)}
               </td>
-              <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>
-                {order.currency} {parseFloat(order.total).toFixed(2)}
-              </td>
-              <td style={{ padding: "12px 16px" }}>
-                <StatusBadge status={order.status} />
-              </td>
-              <td style={{ padding: "12px 16px", color: "#6b7280", whiteSpace: "nowrap" }}>
-                {formatDate(order.received_at)}
-              </td>
-              <td style={{ padding: "12px 16px" }}>
+              <td><StatusBadge status={order.status} /></td>
+              <td className="cell-date">{formatDate(order.received_at)}</td>
+              <td>
                 {order.status === "failed" ? (
                   <RetryButton order={order} onRetrySuccess={onRetrySuccess} />
                 ) : (
-                  <span style={{ color: "#d1d5db" }}>—</span>
+                  <span className="cell-dash">—</span>
                 )}
               </td>
             </tr>
           ))}
         </tbody>
-      </table>
-    </div>
-  );
-};
+      )}
+    </table>
+  </div>
+);

@@ -11,51 +11,49 @@ interface Props {
   onStatusFilterChange: (value: StatusFilter) => void;
 }
 
+const SearchIcon = () => (
+  <svg width="13" height="13" viewBox="0 0 20 20" fill="none"
+    stroke="currentColor" strokeWidth="2"
+    strokeLinecap="round" strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <circle cx="9" cy="9" r="6" />
+    <path d="M15 15l3 3" />
+  </svg>
+);
+
 export const SearchFilterBar: React.FC<Props> = ({
   searchText,
   onSearchChange,
   statusFilter,
   onStatusFilterChange,
 }) => (
-  <div
-    style={{
-      display: "flex",
-      flexWrap: "wrap",
-      gap: "12px",
-      marginBottom: "16px",
-      alignItems: "center",
-    }}
-  >
-    <input
-      type="text"
-      placeholder="Search by Order ID…"
-      value={searchText}
-      onChange={(e) => onSearchChange(e.target.value)}
-      style={{
-        padding: "8px 12px",
-        borderRadius: "6px",
-        border: "1px solid #d1d5db",
-        fontSize: "0.9rem",
-        minWidth: "220px",
-        flex: "1",
-      }}
-    />
-    <select
-      value={statusFilter}
-      onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
-      style={{
-        padding: "8px 12px",
-        borderRadius: "6px",
-        border: "1px solid #d1d5db",
-        fontSize: "0.9rem",
-        backgroundColor: "#fff",
-        cursor: "pointer",
-      }}
-    >
-      <option value="all">All statuses</option>
-      <option value="pending">Pending</option>
-      <option value="synced">Synced</option>
-      <option value="failed">Failed</option>
-    </select>
+  <div className="toolbar">
+    <div className="toolbar-left">
+      <div className="toolbar-search-wrap">
+        <span className="toolbar-search-icon">
+          <SearchIcon />
+        </span>
+        <input
+          type="text"
+          className="toolbar-input"
+          placeholder="Search by order ID…"
+          value={searchText}
+          onChange={(e) => onSearchChange(e.target.value)}
+          aria-label="Search orders by ID"
+        />
+      </div>
+      <select
+        className="toolbar-select"
+        value={statusFilter}
+        onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
+        aria-label="Filter by status"
+      >
+        <option value="all">All statuses</option>
+        <option value="pending">Pending</option>
+        <option value="synced">Synced</option>
+        <option value="failed">Failed</option>
+      </select>
+    </div>
   </div>
 );

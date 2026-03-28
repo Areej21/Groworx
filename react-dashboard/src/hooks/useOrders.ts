@@ -1,5 +1,5 @@
 // Custom hook that fetches orders and sets up a 30-second auto-refresh.
-// Returns orders, loading state, error state, and a manual refetch function.
+// Returns orders, loading state, error state, lastUpdated timestamp, and a manual refetch function.
 import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchOrders } from "../services/api";
 import type { Order } from "../services/api";
@@ -10,6 +10,7 @@ export function useOrders() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   // Track whether the component is still mounted to avoid state updates after unmount
   const mountedRef = useRef(true);
 
@@ -19,6 +20,7 @@ export function useOrders() {
       if (mountedRef.current) {
         setOrders(data);
         setError(null);
+        setLastUpdated(new Date());
       }
     } catch {
       if (mountedRef.current) {
@@ -43,5 +45,5 @@ export function useOrders() {
     };
   }, [load]);
 
-  return { orders, loading, error, refetch: load };
+  return { orders, loading, error, lastUpdated, refetch: load };
 }
