@@ -6,26 +6,27 @@ Accepts a JSON order payload, validates it, transforms it to ERP format, and sto
 
 - **Success:** `201 Created`
 - **Validation error:** `422 Unprocessable Entity`
+- **Duplicate order_id:** `409 Conflict`
 
 ---
-    {
-      "order_id": "WC-1001",
-      "customer_email": "jane@example.com",
-      "customer_name": "Jane Smith",
-      "total": 49.99,
-      "currency": "GBP",
-      "line_items": [
-        {
-          "sku": "SKU-001",
-          "quantity": 1,
-          "unit_price": 49.99
-        }
-      ]
-    }
 
 ### Valid order — single item
 
 ```json
+{
+  "order_id": "WC-1001",
+  "customer_email": "jane@example.com",
+  "customer_name": "Jane Smith",
+  "total": 49.99,
+  "currency": "GBP",
+  "line_items": [
+    {
+      "sku": "SKU-001",
+      "quantity": 1,
+      "unit_price": 49.99
+    }
+  ]
+}
 ```
 
 ---
@@ -79,17 +80,18 @@ Accepts a JSON order payload, validates it, transforms it to ERP format, and sto
 
 ## Validation rules
 
-| Field | Rule |
-|---|---|
-| `order_id` | Required, non-empty string |
-| `customer_email` | Required, valid email format |
-| `total` | Required, positive number (float) |
-| `currency` | Optional, defaults to `"ZAR"` |
-| `line_items` | Required, at least one item |
-| `line_items[].sku` | Required, non-empty string |
-| `line_items[].quantity` | Required, positive integer |
-| `line_items[].unit_price` | Required, non-negative float |
-| `sum(quantity × unit_price) = total` | Order-level check, 2-cent tolerance |
+| Field | Type | Rule |
+|---|---|---|
+| `order_id` | string | Required, non-empty |
+| `customer_email` | string | Required, valid email format |
+| `customer_name` | string | Optional |
+| `total` | float | Required, must equal `sum(quantity × unit_price)` ±0.02 |
+| `currency` | string | Optional, defaults to `"ZAR"` |
+| `created_at` | ISO 8601 datetime | Optional |
+| `line_items` | array | Required, at least one item |
+| `line_items[].sku` | string | Required, non-empty |
+| `line_items[].quantity` | integer | Required, positive (> 0) |
+| `line_items[].unit_price` | float | Required, non-negative (≥ 0) |
 
 ---
 
@@ -133,9 +135,11 @@ curl -X POST http://localhost:8000/webhooks/orders \
 # List all orders
 curl http://localhost:8000/orders
 
-# Retry a failed order (replace 1 with the actual order id)
+# Retry a failed order (replace 1 with the actual numeric DB id)
 curl -X POST http://localhost:8000/orders/1/retry
 ```
+
+---
 
 ## PowerShell quick-start
 
